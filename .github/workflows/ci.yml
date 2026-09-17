@@ -31,7 +31,7 @@ jobs:
     needs: checks
     permissions:
       contents: read
-    uses: fixcomap/platform/.github/workflows/rw-pages-deploy.yml@main
+    uses: fixcomap/platform/.github/workflows/rw-pages-deploy.yml@feature/pages-create-msg
     with:
       project_name: fixcomap-elias
       site_dir: dist
