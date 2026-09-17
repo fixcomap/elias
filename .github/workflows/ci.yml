@@ -1,0 +1,41 @@
+# Sin pipeline propio: llama a los reusable workflows de fixcomap/platform.
+#   PR       → checks + preview <rama>.fixcomap-elias.pages.dev  (environment preview)
+#   develop  → checks + preview develop.fixcomap-elias.pages.dev (environment preview)
+#   main     → checks + producción elias.fixcomap.com            (environment production)
+name: ci
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
+
+# Un workflow llamado no puede pedir más permisos que el job que lo llama.
+jobs:
+  checks:
+    permissions:
+      contents: read
+    uses: fixcomap/platform/.github/workflows/rw-static-checks.yml@main
+    with:
+      site_dir: dist
+      build_cmd: npm run build
+
+  deploy:
+    needs: checks
+    permissions:
+      contents: read
+    uses: fixcomap/platform/.github/workflows/rw-pages-deploy.yml@main
+    with:
+      project_name: fixcomap-elias
+      site_dir: dist
+      build_cmd: npm run build
+      environment: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      production_url: https://elias.fixcomap.com
+    secrets: inherit
