@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# fixcomap/elias
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Portfolio de Elías Prieto en [elias.fixcomap.com](https://elias.fixcomap.com). React + TypeScript + Vite +
+Tailwind; el pipeline construye `dist/` y publica eso.
 
-Currently, two official plugins are available:
+## Cómo se despliega
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Este repo no tiene pipeline propio. `.github/workflows/ci.yml` es el mismo en todos los repos de
+fixcomap y llama al pipeline estándar de [`fixcomap/platform`](https://github.com/fixcomap/platform),
+que lee [`catalog/elias.yaml`](https://github.com/fixcomap/platform/blob/main/catalog/elias.yaml)
+para saber qué es este repo (`type: static`) y cómo publicarlo. El proyecto de Cloudflare Pages
+(`fixcomap-elias`), los dominios y el DNS también salen de ese fichero.
 
-## React Compiler
+| Evento | Qué pasa |
+|---|---|
+| PR a `develop` o `main` | gitflow, gitleaks + trivy, `npm run build`, HTML (W3C Nu) sobre `dist/`, CSP en `_headers`, preview en `<rama>.fixcomap-elias.pages.dev` |
+| Merge a `develop` | lo anterior + preview en `develop.fixcomap-elias.pages.dev` |
+| Merge a `main` | producción tras aprobar el environment `production`, con smoke test de https://elias.fixcomap.com |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+El único check obligatorio es `cicd / ok`. Si un deploy falla, Pages sigue sirviendo la versión
+anterior.
 
-## Expanding the ESLint configuration
+Flujo de ramas (GitFlow):
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+git switch develop && git pull && git switch -c feature/<cambio>
+# ... cambios, commits "<tipo>(<ámbito>): <descripción>" ...
+gh pr create --base develop --fill          # checks en verde, sin aprobación; mirar la preview
+# para publicar:
+git switch develop && git pull && git switch -c release/AAAA-MM-DD
+gh pr create --base main --fill             # 1 aprobación (o bypass de admin)
+# tras el merge: PR de main a develop (back-merge)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Desarrollo local
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Requisitos: Node 22.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm ci
+npm run dev        # http://localhost:5173, recarga en caliente
+npm run lint
+npm run build      # genera dist/, lo mismo que publica el pipeline
+npm run preview    # sirve dist/ en local
 ```
+
+| Fichero | Qué es |
+|---|---|
+| `src/` | componentes React y estilos |
+| `public/` | se copia tal cual a `dist/`; `public/_headers` son las cabeceras de Pages (CSP) |
+| `index.html`, `vite.config.ts`, `tailwind.config.js` | entrada y configuración de Vite/Tailwind |
