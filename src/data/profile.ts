@@ -179,6 +179,14 @@ export interface Certification {
 
 export const certifications: Certification[] = [
   {
+    id: 'cert-aws-ccp',
+    name: 'AWS Certified Cloud Practitioner',
+    issuer: 'Amazon Web Services',
+    issuedDate: '2026',
+    expiry: '2029',
+    verifyUrl: 'https://www.credly.com/badges/9fd2016a-5e25-4b02-90e3-e0205ea4b2bf/public_url',
+  },
+  {
     id: 'cert-1',
     name: 'Microsoft AZ-900',
     issuer: 'Microsoft',
